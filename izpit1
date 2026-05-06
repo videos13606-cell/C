@@ -1,1 +1,88 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct {
+    char name[50];
+    char model[50];
+    char registration[10];
+    int production_year;
+    float price_daily;
+} Car;
+
+void discount_brand(Car *arr, int n, char *search_brand);
+int expert_cars(Car *arr, int n, int min_year, int max_year);
+Car* add_new_car(Car *arr, int *n, Car new_car);
+
+int main() {
+    int n;
+    char search_brand[50];
+    int min_year, max_year;
+    Car new_car;
+
+    FILE *f_in = fopen("cars.bin", "rb");
+    if (f_in == NULL) {
+        printf("Greshka pri otvarqne!\n");
+        return 1;
+    }
+
+    fread(&n, sizeof(int), 1, f_in);
+    Car *cars = (Car*)malloc(n * sizeof(Car));
+    fread(cars, sizeof(Car), n, f_in);
+
+    printf("\nNapishete marka: ");
+    scanf("%s", search_brand);
+    discount_brand(cars, n, search_brand);
+
+    printf("\nNapishete min godina: ");
+    scanf("%d", &min_year);
+    printf("Napishete max godina: ");
+    scanf("%d", &max_year);
+    expert_cars(cars, n, min_year, max_year);
+
+    printf("\nVuvedete danni za novata kola (ime, model, reg, godina, cena):\n");
+    scanf("%s", new_car.name);
+    scanf("%s", new_car.model);
+    scanf("%s", new_car.registration);
+    scanf("%d", &new_car.production_year);
+    scanf("%f", &new_car.price_daily);
+
+    cars = add_new_car(cars, &n, new_car);
+
+    fclose(f_in);
+    free(cars);
+    return 0;
+}
+
+void discount_brand(Car *arr, int n, char *search_brand) {
+    for(int i = 0; i < n; i++) {
+        if (strcmp(arr[i].model, search_brand) == 0) {
+            arr[i].price_daily *= 0.85;
+            printf("%.2flv.-%s-%s\n", arr[i].price_daily, arr[i].model, arr[i].registration);
+        }
+    }
+}
+
+int expert_cars(Car *arr, int n, int min_year, int max_year) {
+    FILE *f_out = fopen("fleet.txt", "w");
+    if (f_out == NULL) return 0;
+
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+        if (arr[i].production_year >= min_year && arr[i].production_year <= max_year) {
+            fprintf(f_out, "Avtomobil: %s\nGodina: %d\nCena: %.2f lv.\n", arr[i].name, arr[i].production_year, arr[i].price_daily);
+            count++;
+        }
+    }
+
+    fclose(f_out);
+    return count;
+}
+
+Car* add_new_car(Car *arr, int *n, Car new_car) {
+    (*n)++;
+    arr = (Car*)realloc(arr, (*n) * sizeof(Car));
+    arr[(*n) - 1] = new_car;
+    return arr;
+}
 
