@@ -1,1 +1,1 @@
-# C
+# Izpitni zadachi po C
