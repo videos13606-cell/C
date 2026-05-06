@@ -1,0 +1,156 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// --- Задача 1: Структурата ---
+typedef struct {
+    char names[55];
+    char id[7]; // 6 символа + 1 за '\0'
+    float price;
+    int locker;
+} Member;
+
+// --- Прототипи на функциите ---
+Member* add_member(Member *arr, int *n, Member new_member);
+void average_price(Member *arr, int n);
+void search_identity(char *search_id);
+
+int main() {
+    int n;
+    char search_id[7];
+    Member new_member;
+
+    // 1. Създаваме първоначален масив (примерно от 2-ма души, за да има какво да четем)
+    printf("Vuvedete broy na segashnite chlenove: ");
+    scanf("%d", &n);
+    Member *members = (Member*)malloc(n * sizeof(Member));
+    
+    for(int i = 0; i < n; i++) {
+        printf("\nVuvedete danni za chlen %d:\n", i + 1);
+        printf("Imena: ");
+        scanf(" %[^\n]", members[i].names); // Специален трик за четене на текст с интервали в C
+        printf("ID (AA1234): ");
+        scanf("%s", members[i].id);
+        printf("Cena: ");
+        scanf("%f", &members[i].price);
+        printf("Shkafche: ");
+        scanf("%d", &members[i].locker);
+    }
+
+    // --- Извикване на Задача 1 (Добавяне и запис в Текст) ---
+    printf("\n--- DOBABQNE NA NOV CHLEN ---\n");
+    printf("Imena: ");
+    scanf(" %[^\n]", new_member.names);
+    printf("ID: ");
+    scanf("%s", new_member.id);
+    printf("Cena: ");
+    scanf("%f", &new_member.price);
+    printf("Shkafche: ");
+    scanf("%d", &new_member.locker);
+    
+    members = add_member(members, &n, new_member);
+
+    // --- Извикване на Задача 2 (Средна цена) ---
+    printf("\n--- CHLENOVE POD SREDNATA CENA ---\n");
+    average_price(members, n);
+
+    // --- Извикване на Задача 3 (Търсене в Бинарен файл) ---
+    printf("\n--- TURSENE V BINAREN FAIL ---\n");
+    printf("Vuvedete ID za tursene: ");
+    scanf("%s", search_id);
+    search_identity(search_id);
+
+    // Освобождаваме паметта накрая
+    free(members);
+    return 0;
+}
+
+// ==========================================
+// ФУНКЦИИТЕ
+// ==========================================
+
+// --- Задача 1: Добавяне и запис в membersText.txt ---
+Member* add_member(Member *arr, int *n, Member new_member) {
+    // 1. Динамично разширяване (Логиката ти е супер!)
+    (*n)++;
+    arr = (Member*)realloc(arr, (*n) * sizeof(Member));
+    arr[(*n) - 1] = new_member;
+
+    // 2. Запис в текстовия файл с разделител ';' и дължина отпред
+    FILE *f_out = fopen("membersText.txt", "a"); // "a" означава append (запис накрая)
+    if (f_out != NULL) {
+        // strlen() взима точната дължина на името (капанът!)
+        fprintf(f_out, "%d;%s;%s;%.2f;%d\n", 
+                (int)strlen(new_member.names), 
+                new_member.names, 
+                new_member.id, 
+                new_member.price, 
+                new_member.locker);
+        fclose(f_out);
+    }
+    
+    return arr;
+}
+
+// --- Задача 2: Средноаритметична цена ---
+void average_price(Member *arr, int n) {
+    float sum = 0;
+    
+    // Първи цикъл: Събираме всички цени
+    for (int i = 0; i < n; i++) {
+        sum += arr[i].price;
+    }
+    
+    // Намираме средното
+    float avg = sum / n;
+    
+    // Втори цикъл: Принтираме тези под сумата
+    for (int i = 0; i < n; i++) {
+        if (arr[i].price < avg) {
+            printf("%s - %s - %.2f\n", arr[i].names, arr[i].id, arr[i].price);
+        }
+    }
+}
+
+// --- Задача 3: Четене от members.bin (Гадната задача) ---
+void search_identity(char *search_id) {
+    FILE *f_in = fopen("members.bin", "rb");
+    if (f_in == NULL) {
+        printf("Failut members.bin ne sushtestvuva!\n");
+        return;
+    }
+
+    int name_len;
+    // Докато успяваме да прочетем дължината на следващото име (докато не свърши файлът)
+    while (fread(&name_len, sizeof(int), 1, f_in) == 1) {
+        
+        // 1. Четем името точно според дължината му
+        char temp_name[55];
+        fread(temp_name, sizeof(char), name_len, f_in);
+        temp_name[name_len] = '\0'; // Затваряме стринга
+        
+        // 2. Четем ID (винаги 6 символа)
+        char temp_id[7];
+        fread(temp_id, sizeof(char), 6, f_in);
+        temp_id[6] = '\0';
+        
+        // 3. Четем цената
+        float temp_price;
+        fread(&temp_price, sizeof(float), 1, f_in);
+        
+        // 4. Четем шкафчето
+        int temp_locker;
+        fread(&temp_locker, sizeof(int), 1, f_in);
+
+        // 5. Проверяваме дали това е нашият човек!
+        if (strcmp(temp_id, search_id) == 0) {
+            printf("Bin Names: %s\n", temp_name);
+            printf("Bin ID: %s\n", temp_id);
+            printf("Bin M_Price: %.2f\n", temp_price);
+            printf("Bin Locker: %d\n", temp_locker);
+            break; // Намерихме го, приключваме търсенето
+        }
+    }
+    
+    fclose(f_in);
+}
