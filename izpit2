@@ -1,0 +1,88 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct {
+    char name[50];
+    char date[15];
+    int count_lectures;
+    float price;
+} Course;
+
+void applyDiscount(Course *arr, int n, int index);
+int safeOffers(Course *arr, int n, float min_price, float max_price);
+Course* deleteOffers(Course *arr, int *n, char *search_name, char *search_date);
+
+int main() {
+    int n, index;
+    float min_price, max_price;
+    char search_name[50], search_date[15];
+
+    FILE *f_in = fopen("courses.bin", "rb");
+    if (f_in == NULL) return 1;
+
+    fread(&n, sizeof(int), 1, f_in);
+    Course *courses = (Course*)malloc(n * sizeof(Course));
+    fread(courses, sizeof(Course), n, f_in);
+
+    printf("\nVuvedete index: ");
+    scanf("%d", &index);
+    applyDiscount(courses, n, index);
+
+    printf("\nVuvedete minimalna cena: ");
+    scanf("%f", &min_price);
+    printf("Vuvedete maximalna cena: ");
+    scanf("%f", &max_price);
+    safeOffers(courses, n, min_price, max_price);
+
+    printf("\nVuvedete turseno ime: ");
+    scanf("%s", search_name);
+    printf("Vuvedete tursena data: ");
+    scanf("%s", search_date);
+
+    courses = deleteOffers(courses, &n, search_name, search_date);
+
+    fclose(f_in);
+    free(courses);
+    return 0;
+}
+
+void applyDiscount(Course *arr, int n, int index) {
+    if(index >= 0 && index < n) {
+        arr[index].price *= 0.9;
+        printf("%.2f lv. -- %s -- %s\n", arr[index].price, arr[index].name, arr[index].date);
+    } else {
+        printf("Index doesn't exist!\n");
+    }
+}
+
+int safeOffers(Course *arr, int n, float min_price, float max_price) {
+    FILE *f_out = fopen("offer.txt", "w");
+    if (f_out == NULL) return 0;
+
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+        if(arr[i].price >= min_price && arr[i].price <= max_price) {
+            fprintf(f_out, "Ime: %s\nData: %s\nLekcii: %d\nCena: %.2f lv\n", arr[i].name, arr[i].date, arr[i].count_lectures, arr[i].price);
+            count++;
+        }
+    }
+    fclose(f_out);
+    return count;
+}
+
+Course* deleteOffers(Course *arr, int *n, char *search_name, char *search_date) {
+    for(int i = 0; i < *n; i++) {
+        if (strcmp(search_name, arr[i].name) == 0 && strcmp(search_date, arr[i].date) == 0) {
+
+            for(int j = i; j < (*n) - 1; j++) {
+                arr[j] = arr[j+1];
+            }
+
+            (*n)--;
+            arr = (Course*)realloc(arr, (*n) * sizeof(Course));
+            break;
+        }
+    }
+    return arr;
+}
