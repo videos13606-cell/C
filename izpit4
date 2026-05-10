@@ -1,0 +1,135 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+typedef struct
+{
+  char name[30];
+  char date[8];
+  long code;
+  float price;
+  int quantity;
+}Medicine;
+
+void zad2(Medicine *arr, int n, char *enterdate);
+void zad3(Medicine *arr, int n, int enterquantity);
+Medicine *zad4(Medicine *arr, int *n, long entercode);
+
+int main()
+{
+  FILE *f_in = fopen("medicines.txt","r");
+  if (f_in == NULL) return 1;
+
+  int n = 0;
+  char enterdate[8];
+  int enterquantity;
+  long entercode;
+  
+  Medicine temp; 
+	while (fscanf(f_in, "%[^;]; %[^;]; %ld; %f; %d\n", 
+temp.name, temp.date, &temp.code, &temp.price, &temp.quantity) == 5) 
+	{
+    	    n++;
+	}	
+  rewind(f_in);
+
+  Medicine *medicines = (Medicine*)malloc(n*sizeof(Medicine));
+  if (medicines == NULL) return 1;
+  
+  for (int i=0; i<n;i++)
+  {
+     fscanf(f_in, "%s; %s; %ld; %lf; %d\n", medicines[i].name, medicines[i].date, &medicines[i].code, &medicines[i].price, &medicines[i].quantity);
+  }
+
+  printf("\nEnter date:");
+  scanf("%s",enterdate);
+  zad2(medicines, n, enterdate);
+
+  printf("\nEnter quantity:");
+  scanf("%d",&enterquantity);
+  zad3(medicines, n, enterquantity);
+
+  printf("\nEnter code:");
+  scanf("%ld",&entercode);
+  zad4(medicines, &n, entercode);
+
+  fclose(f_in);
+}
+
+void zad2(Medicine *arr, int n, char *enterdate)
+{
+  int m1,y1,value1;
+  int m2,y2,value2;
+  int count = 0;
+
+  sscanf(enterdate, "%d. %d",&m1,&y1);
+  value1 = y1*100 + m1;
+  
+  for (int i = 0; i<n; i++)
+  {
+    sscanf(arr[i].date,"%d. %d",&m2,&y2);
+    value2= y2*100+m2;
+
+    if (value1>value2)
+    {
+       printf("%s - %s - %lf лева - ",arr[i].name, arr[i].date, arr[i].price);
+       arr[i].price *=0.8;
+       printf("%lf\n", arr[i].price);
+       count++;
+    }
+  }
+
+  if (count==0)
+  {
+    printf("Nqma suvpadeniq!\n");
+  }
+  
+}
+
+void zad3(Medicine *arr, int n, int enterquantity)
+{
+  FILE *f_out = fopen("offer.bin","wb");
+  if(f_out == NULL) return 1;
+
+  for (int i = 0; i<n; i++)
+  {
+    if (arr[i].quantity > enterquantity)
+    {
+	int len = strlen(arr[i].name);
+	fwrite(&len, sizeof(int), 1, f_out);
+	fwrite(arr[i].name, 1, len, f_out);
+
+	fwrite(arr[i].date, 8,1 , f_out);
+	fwrite(&arr[i].code, sizeof(long), 1, f_out); 
+	fwrite(&arr[i].price, sizeof(float), 1, f_out);
+	fwrite(&arr[i].quantity, sizeof(int), 1, f_out);
+	
+    }
+  }
+
+  fclose(f_out);
+}
+
+Medicine *zad4(Medicine *arr, int *n, long entercode)
+{
+  int count = 0;
+  for(int i = 0; i<(*n);i++)
+  {
+     if(arr[i].code == entercode)
+     {
+        for(int j = i; j<(*n)-1; j++)
+        {
+           arr[j] = arr[j+1];
+        }
+        (*n)--;
+        arr = (Medicine*)realloc(arr, (*n) *sizeof(Medicine));
+        count++;
+     }
+   }
+   if (count == 0)
+   {
+	printf("Nqma suvpadenie");
+   }
+   
+   return arr;
+}
