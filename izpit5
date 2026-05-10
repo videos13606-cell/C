@@ -1,0 +1,127 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Задача 1: Създаване на структурата
+typedef struct {
+    int id;
+    char date[15]; // Достатъчно голям за формат ДД. ММ. ГГГГ
+    char name[30];
+    char diagnosis[50];
+} Treatment;
+
+// Задача 2: Броене на лечения по име и диагноза
+int count_treatment(Treatment *arr, int n, char *name, char *diagnosis) {
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+        // Проверяваме дали и името, и диагнозата съвпадат едновременно
+        if (strcmp(arr[i].name, name) == 0 && strcmp(arr[i].diagnosis, diagnosis) == 0) {
+            count++;
+        }
+    }
+    return count; // Ако не открие нищо, count ще си остане 0, което изпълнява условието
+}
+
+// Задача 3: Добавяне на ново лечение (използваме нашия научен трик с int *n)
+Treatment* add_new_treatment(Treatment *arr, int *n) {
+    (*n)++; // Увеличаваме оригиналния брой
+    
+    // Преоразмеряваме
+    Treatment *temp = (Treatment*)realloc(arr, (*n) * sizeof(Treatment));
+    if (temp == NULL) {
+        (*n)--; // Връщаме бройката обратно, ако има грешка
+        return NULL;
+    }
+    arr = temp;
+
+    // Въвеждаме данните за последния елемент (на индекс *n - 1)
+    printf("Въведете ID: ");
+    scanf("%d", &arr[(*n)-1].id);
+    
+    // Използваме " %[^\n]" в scanf, за да позволим четене на стрингове с интервали
+    printf("Въведете дата (ДД. ММ. ГГГГ): ");
+    scanf(" %[^\n]", arr[(*n)-1].date);
+    
+    printf("Въведете име: ");
+    scanf(" %[^\n]", arr[(*n)-1].name);
+    
+    printf("Въведете диагноза: ");
+    scanf(" %[^\n]", arr[(*n)-1].diagnosis);
+
+    return arr; // Връщаме новия адрес
+}
+
+// Задача 4: Запис в текстов файл
+int write_text_file(Treatment *arr, int n, char *diagnosis) {
+    FILE *fp = fopen("illness.txt", "w");
+    if (fp == NULL) return 0; // Ако не може да отвори файла, връща 0
+
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+        if (strcmp(arr[i].diagnosis, diagnosis) == 0) {
+            // Записваме точно в искания формат
+            fprintf(fp, "Болничен престой на %s\nза лечение на %s:\n%s\n", 
+                    arr[i].name, arr[i].diagnosis, arr[i].date);
+            count++;
+        }
+    }
+    
+    fclose(fp);
+    return count;
+}
+
+// Главната функция (Задача 1 продължение)
+int main() {
+    // Отваряме бинарния файл за четене
+    FILE *fp = fopen("history.bin", "rb");
+    if (fp == NULL) {
+        printf("Грешка при отваряне на файла!\n");
+        return 1;
+    }
+
+    int n;
+    // Първо прочитаме броя на елементите (както е по условие)
+    if (fread(&n, sizeof(int), 1, fp) != 1) {
+        printf("Грешка при четене на броя епикризи!\n");
+        fclose(fp);
+        return 1;
+    }
+
+    // Заделяме динамичната памет
+    Treatment *history = (Treatment*)malloc(n * sizeof(Treatment));
+    if (history == NULL) {
+        printf("Грешка при заделяне на памет!\n");
+        fclose(fp);
+        return 1;
+    }
+
+    // Прочитаме самите епикризи
+    fread(history, sizeof(Treatment), n, fp);
+    fclose(fp);
+
+    // ==========================================
+    // ТЕСТОВЕ НА ФУНКЦИИТЕ
+    // ==========================================
+    
+    // Тест Зад. 2
+    int visits = count_treatment(history, n, "Иван Иванов", "Грип");
+    printf("Брой посещения: %d\n", visits);
+
+    // Тест Зад. 3
+    Treatment *updated_history = add_new_treatment(history, &n);
+    if (updated_history != NULL) {
+        history = updated_history; // Прибираме новия адрес (визитката)
+        printf("Успешно добавен елемент!\n");
+    } else {
+        printf("Грешка при добавяне!\n");
+    }
+
+    // Тест Зад. 4
+    int written_records = write_text_file(history, n, "Грип");
+    printf("Записани файлове: %d\n", written_records);
+
+    // Освобождаваме паметта накрая
+    free(history);
+
+    return 0;
+}
